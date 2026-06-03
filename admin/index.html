@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Tokens ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a;
+      --bg1: #111;
+      --bg2: #161616;
+      --bg3: #1e1e1e;
+      --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14);
+      --text: #f0ede8;
+      --text2: rgba(240,237,232,0.55);
+      --text3: rgba(240,237,232,0.3);
+      --accent: #e8ff47;
+      --accent-dim: rgba(232,255,71,0.1);
+      --error: #ff5f5f;
+      --success: #4dff91;
+      --sidebar-w: 240px;
+      --font: 'Space Grotesk', sans-serif;
+      --mono: 'Space Mono', monospace;
+      --radius: 6px;
+      --dur: 200ms;
+    }
+    html { font-size: 16px; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    ::selection { background: var(--accent); color: #000; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 2px; }
+
+    /* ── Login ── */
+    #login-screen {
+      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: var(--bg); z-index: 1000;
+    }
+    .login-box {
+      width: 100%; max-width: 400px; padding: 2.5rem;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg1); margin: 1rem;
+    }
+    .login-logo { font-family: var(--mono); font-size: 1.25rem; font-weight: 700; margin-bottom: 2rem; }
+    .login-logo span { color: var(--accent); }
+    .login-box h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .login-sub { font-size: 0.875rem; color: var(--text2); margin-bottom: 2rem; }
+    .login-error { background: rgba(255,95,95,0.1); border: 1px solid rgba(255,95,95,0.3); color: var(--error); padding: 0.75rem 1rem; border-radius: var(--radius); font-size: 0.875rem; margin-bottom: 1.25rem; display: none; }
+
+    /* ── Sidebar ── */
+    #app { display: flex; width: 100%; min-height: 100vh; }
+    .sidebar {
+      width: var(--sidebar-w); flex-shrink: 0; border-right: 1px solid var(--border);
+      background: var(--bg1); display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 50;
+      transform: translateX(-100%); transition: transform var(--dur);
+    }
+    .sidebar.open { transform: translateX(0); }
+    @media (min-width: 900px) { .sidebar { transform: translateX(0) !important; position: sticky; height: 100vh; } }
+
+    .sidebar-logo { padding: 1.5rem; font-family: var(--mono); font-size: 1rem; font-weight: 700; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .sidebar-logo span { color: var(--accent); }
+    .sidebar-nav { flex: 1; padding: 1rem 0; overflow-y: auto; }
+    .nav-item {
+      display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 1.25rem;
+      font-size: 0.875rem; color: var(--text2); cursor: pointer; border-radius: 0;
+      transition: color var(--dur), background var(--dur); border: none; background: none;
+      width: 100%; text-align: left; letter-spacing: 0.01em;
+    }
+    .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    .nav-item.active { color: var(--accent); background: var(--accent-dim); }
+    .nav-item:focus-visible { outline: 2px solid var(--accent); }
+    .sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border); }
+    .logout-btn { width: 100%; padding: 0.6rem 1rem; background: transparent; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text2); font-size: 0.8125rem; cursor: pointer; font-family: var(--font); transition: border-color var(--dur), color var(--dur); }
+    .logout-btn:hover { border-color: var(--error); color: var(--error); }
+
+    /* ── Main ── */
+    .main-content { flex: 1; min-width: 0; padding: 2rem; }
+    @media (min-width: 900px) { .main-content { margin-left: 0; } }
+
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; gap: 1rem; }
+    .topbar-left { display: flex; align-items: center; gap: 1rem; }
+    .menu-toggle { display: flex; flex-direction: column; gap: 4px; background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 0.5rem; cursor: pointer; }
+    .menu-toggle span { display: block; width: 18px; height: 1.5px; background: var(--text); }
+    @media (min-width: 900px) { .menu-toggle { display: none; } }
+    .page-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+    .live-badge { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--success); font-family: var(--mono); letter-spacing: 0.06em; }
+    .live-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+    /* ── Panels ── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── Cards ── */
+    .card { background: var(--bg1); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem; }
+    .card-title { font-size: 1rem; font-weight: 600; }
+    .card-sub { font-size: 0.8125rem; color: var(--text2); margin-top: 0.25rem; }
+
+    /* ── Form elements ── */
+    .form-grid { display: grid; gap: 1.25rem; }
+    .form-grid-2 { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 640px) { .form-grid-2 { grid-template-columns: 1fr; } }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label { font-size: 0.8125rem; color: var(--text2); }
+    .form-input, .form-select, .form-textarea {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 0.65rem 0.875rem;
+      font-size: 0.9375rem; font-family: var(--font); color: var(--text);
+      transition: border-color var(--dur); width: 100%;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--accent); }
+    .form-input::placeholder, .form-textarea::placeholder { color: var(--text3); }
+    .form-textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+    .form-select { cursor: pointer; }
+    .form-hint { font-size: 0.75rem; color: var(--text3); }
+
+    /* ── Buttons ── */
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.25rem; border-radius: var(--radius); font-size: 0.875rem; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all var(--dur); font-family: var(--font); }
+    .btn:focus-visible { outline: 2px solid var(--accent); }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--accent); color: #000; font-weight: 600; }
+    .btn-primary:hover { background: #f4ff7a; }
+    .btn-ghost { background: transparent; border-color: var(--border); color: var(--text2); }
+    .btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+    .btn-danger { background: transparent; border-color: rgba(255,95,95,0.3); color: var(--error); }
+    .btn-danger:hover { background: rgba(255,95,95,0.1); border-color: var(--error); }
+    .btn-sm { padding: 0.4rem 0.875rem; font-size: 0.8125rem; }
+    .btn-icon { padding: 0.5rem; }
+    .btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+
+    /* ── Toast ── */
+    #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.75rem; pointer-events: none; }
+    .toast { padding: 0.75rem 1.25rem; border-radius: var(--radius); font-size: 0.875rem; font-weight: 500; pointer-events: auto; animation: toastIn 0.3s ease; border: 1px solid; max-width: 320px; }
+    .toast-success { background: rgba(77,255,145,0.1); border-color: rgba(77,255,145,0.3); color: var(--success); }
+    .toast-error { background: rgba(255,95,95,0.1); border-color: rgba(255,95,95,0.3); color: var(--error); }
+    @keyframes toastIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+
+    /* ── Photo upload ── */
+    .photo-upload-area { display: flex; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap; }
+    .photo-preview { width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--border); background: var(--bg2); object-fit: cover; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .photo-preview svg { width: 36px; height: 36px; color: var(--text3); }
+    .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .upload-actions { display: flex; flex-direction: column; gap: 0.5rem; justify-content: center; }
+    .file-input-hidden { display: none; }
+
+    /* ── Project/Skill list ── */
+    .item-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+    .item-row {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1rem 1.25rem; display: flex; align-items: center; gap: 1rem;
+      transition: border-color var(--dur);
+    }
+    .item-row:hover { border-color: var(--border2); }
+    .item-row-drag { cursor: grab; color: var(--text3); flex-shrink: 0; }
+    .item-row-drag svg { width: 16px; height: 16px; }
+    .item-row-body { flex: 1; min-width: 0; }
+    .item-row-title { font-size: 0.9375rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item-row-meta { font-size: 0.8125rem; color: var(--text2); margin-top: 0.2rem; }
+    .item-row-thumb { width: 44px; height: 36px; border-radius: 4px; object-fit: cover; background: var(--bg3); flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .item-row-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .item-row-thumb svg { width: 18px; height: 18px; color: var(--text3); }
+    .item-row-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+
+    /* ── Modal ── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1rem; opacity: 0; pointer-events: none; transition: opacity var(--dur); }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal { background: var(--bg1); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 620px; max-height: 90vh; overflow-y: auto; transform: scale(0.95); transition: transform var(--dur); }
+    .modal-overlay.open .modal { transform: scale(1); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1.5rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg1); z-index: 1; }
+    .modal-title { font-size: 1.125rem; font-weight: 700; }
+    .modal-close { background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 0.4rem; cursor: pointer; color: var(--text2); transition: color var(--dur), border-color var(--dur); }
+    .modal-close:hover { color: var(--text); border-color: var(--border2); }
+    .modal-close svg { width: 18px; height: 18px; display: block; }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer { padding: 1.25rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem; }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
+
+    /* ── Project image in modal ── */
+    .proj-img-preview { width: 100%; aspect-ratio: 16/9; border-radius: var(--radius); background: var(--bg2); border: 1px solid var(--border); object-fit: cover; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 0.75rem; }
+    .proj-img-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .proj-img-preview svg { width: 40px; height: 40px; color: var(--text3); }
+
+    /* ── Stat row ── */
+    .stat-row { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-label { font-size: 0.875rem; color: var(--text2); }
+    .stat-val { font-family: var(--mono); font-size: 0.875rem; color: var(--accent); }
+
+    /* ── Tags ── */
+    .tag-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .tag-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.7rem; border: 1px solid var(--border); border-radius: 100px; font-size: 0.8125rem; color: var(--text2); }
+    .tag-chip-del { background: none; border: none; cursor: pointer; color: var(--text3); padding: 0 0.1rem; font-size: 1rem; line-height: 1; transition: color var(--dur); }
+    .tag-chip-del:hover { color: var(--error); }
+    .tag-add-row { display: flex; gap: 0.5rem; }
+  </style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">INK<span>.</span> Admin</div>
+    <h1>Welcome back</h1>
+    <p class="login-sub">Sign in to manage your portfolio content.</p>
+    <div class="login-error" id="login-error">Invalid username or password.</div>
+    <div class="form-group" style="margin-bottom:1rem">
+      <label class="form-label" for="l-user">Username</label>
+      <input class="form-input" id="l-user" type="text" autocomplete="username" placeholder="admin" />
+    </div>
+    <div class="form-group" style="margin-bottom:1.5rem">
+      <label class="form-label" for="l-pass">Password</label>
+      <input class="form-input" id="l-pass" type="password" autocomplete="current-password" placeholder="••••••••" />
+    </div>
+    <button class="btn btn-primary" style="width:100%" id="login-btn">Sign in</button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app" style="display:none; width:100%">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">INK<span>.</span> Admin</div>
+    <nav class="sidebar-nav" aria-label="Admin sections">
+      <button class="nav-item active" data-panel="profile">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Profile
+      </button>
+      <button class="nav-item" data-panel="projects">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+        Projects
+      </button>
+      <button class="nav-item" data-panel="skills">
+        <svg viewBox="0 0 24 24" fill="none"><polyline points="16 18 22 12 16 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="8 6 2 12 8 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Skills
+      </button>
+      <button class="nav-item" data-panel="testimonial">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Testimonial
+      </button>
+      <button class="nav-item" data-panel="settings">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.5"/></svg>
+        Settings
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="logout-btn" id="logout-btn">Sign out</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">
+          <span></span><span></span><span></span>
+        </button>
+        <h1 class="page-title" id="page-title">Profile</h1>
+      </div>
+      <div class="live-badge">Live</div>
+    </div>
+
+    <!-- ── Profile Panel ── -->
+    <div class="panel active" id="panel-profile">
+
+      <!-- Photo -->
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Profile Photo</div><div class="card-sub">Shown on the About section. Recommended: square, min 400x400px.</div></div>
+        </div>
+        <div class="photo-upload-area">
+          <div class="photo-preview" id="photo-preview">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div class="upload-actions">
+            <button class="btn btn-ghost btn-sm" id="photo-upload-btn">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Upload photo
+            </button>
+            <span class="form-hint">JPG, PNG, WebP — max 5MB</span>
+            <input type="file" id="photo-file" class="file-input-hidden" accept="image/jpeg,image/png,image/webp,image/gif" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero & Bio -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">Hero Text</div></div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label" for="p-name">Your name</label>
+            <input class="form-input" id="p-name" type="text" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="p-title">Job title</label>
+            <input class="form-input" id="p-title" type="text" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="p-eyebrow">Eyebrow badge (e.g. "Available for work")</label>
+            <input class="form-input" id="p-eyebrow" type="text" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="p-location">Location</label>
+            <input class="form-input" id="p-location" type="text" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="p-hero1">Hero heading line 1</label>
+            <input class="form-input" id="p-hero1" type="text" placeholder="Crafting" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="p-hero2">Hero heading line 2 (accent)</label>
+            <input class="form-input" id="p-hero2" type="text" placeholder="digital" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="p-hero3">Hero heading line 3</label>
+            <input class="form-input" id="p-hero3" type="text" placeholder="experiences." />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="p-herobrief">Hero subline</label>
+            <input class="form-input" id="p-herobrief" type="text" />
+          </div>
+          <div class="form-group full">
+            <label class="form-label" for="p-bio">About bio (paragraph 1)</label>
+            <textarea class="form-textarea" id="p-bio" rows="3"></textarea>
+          </div>
+          <div class="form-group full">
+            <label class="form-label" for="p-bio2">About bio (paragraph 2)</label>
+            <textarea class="form-textarea" id="p-bio2" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+          <label class="form-label">About tags</label>
+        </div>
+        <div class="tag-list" id="tag-list"></div>
+        <div class="tag-add-row">
+          <input class="form-input" id="tag-input" type="text" placeholder="Add a tag..." style="max-width:220px" />
+          <button class="btn btn-ghost btn-sm" id="tag-add-btn">Add</button>
+        </div>
+      </div>
+
+      <!-- Stats & Links -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">Stats &amp; Links</div></div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="form-label" for="p-stat-projects">Projects count</label>
+            <input class="form-input" id="p-stat-projects" type="number" min="0" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="p-stat-years">Years experience</label>
+            <input class="form-input" id="p-stat-years" type="number" min="0" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="p-stat-sat">Satisfaction %</label>
+            <input class="form-input" id="p-stat-sat" type="number" min="0" max="100" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="p-avail">Availability</label>
+            <select class="form-select" id="p-avail">
+              <option value="true">Open to work</option>
+              <option value="false">Not available</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="p-email">Email</label>
+            <input class="form-input" id="p-email" type="email" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="p-github">GitHub URL</label>
+            <input class="form-input" id="p-github" type="url" />
+          </div>
+          <div class="form-group full">
+            <label class="form-label" for="p-linkedin">LinkedIn URL</label>
+            <input class="form-input" id="p-linkedin" type="url" />
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="save-profile-btn">Save profile</button>
+    </div>
+
+    <!-- ── Projects Panel ── -->
+    <div class="panel" id="panel-projects">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Projects</div><div class="card-sub">Add, edit, or remove portfolio projects.</div></div>
+          <button class="btn btn-primary btn-sm" id="add-project-btn">
+            <svg viewBox="0 0 24 24" fill="none"><line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Add project
+          </button>
+        </div>
+        <div class="item-list" id="projects-list"></div>
+      </div>
+    </div>
+
+    <!-- ── Skills Panel ── -->
+    <div class="panel" id="panel-skills">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Skills</div><div class="card-sub">Manage your capability cards.</div></div>
+          <button class="btn btn-primary btn-sm" id="add-skill-btn">
+            <svg viewBox="0 0 24 24" fill="none"><line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Add skill
+          </button>
+        </div>
+        <div class="item-list" id="skills-list"></div>
+      </div>
+    </div>
+
+    <!-- ── Testimonial Panel ── -->
+    <div class="panel" id="panel-testimonial">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Featured Testimonial</div></div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="t-quote">Quote</label>
+            <textarea class="form-textarea" id="t-quote" rows="4"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="t-author">Author name</label>
+            <input class="form-input" id="t-author" type="text" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="t-role">Author role / company</label>
+            <input class="form-input" id="t-role" type="text" />
+          </div>
+        </div>
+        <div class="divider"></div>
+        <button class="btn btn-primary" id="save-testimonial-btn">Save testimonial</button>
+      </div>
+    </div>
+
+    <!-- ── Settings Panel ── -->
+    <div class="panel" id="panel-settings">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:1rem">Server info</div>
+        <div class="stat-row"><span class="stat-label">Admin username</span><span class="stat-val" id="s-user">—</span></div>
+        <div class="stat-row"><span class="stat-label">Data file</span><span class="stat-val">server/data/db.json</span></div>
+        <div class="stat-row"><span class="stat-label">Uploads folder</span><span class="stat-val">server/uploads/</span></div>
+        <div class="stat-row"><span class="stat-label">API base</span><span class="stat-val">http://localhost:3000/api</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:0.5rem">Change password</div>
+        <p style="font-size:0.8125rem;color:var(--text2);margin-bottom:1.25rem">To change your admin credentials, edit the <code style="font-family:var(--mono);color:var(--accent)">ADMIN_USER</code> and <code style="font-family:var(--mono);color:var(--accent)">ADMIN_PASS</code> environment variables (or the defaults at the top of <code style="font-family:var(--mono);color:var(--accent)">server/index.js</code>), then restart the server.</p>
+        <div class="form-hint">Default: admin / portfolio2025</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Project Modal -->
+<div class="modal-overlay" id="project-modal" role="dialog" aria-modal="true" aria-labelledby="project-modal-title">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="project-modal-title">Add project</h2>
+      <button class="modal-close" id="project-modal-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="proj-img-preview" id="proj-img-preview">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="1.5"/><polyline points="21 15 16 10 5 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem">
+        <button class="btn btn-ghost btn-sm" id="proj-img-upload-btn">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Upload image
+        </button>
+        <input type="file" id="proj-img-file" class="file-input-hidden" accept="image/*" />
+        <span class="form-hint" style="align-self:center">16:9 recommended</span>
+      </div>
+
+      <input type="hidden" id="proj-id" />
+      <input type="hidden" id="proj-image-url" />
+
+      <div class="form-grid form-grid-2">
+        <div class="form-group full">
+          <label class="form-label" for="proj-title">Title</label>
+          <input class="form-input" id="proj-title" type="text" placeholder="Project name — Subtitle" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="proj-category">Category</label>
+          <input class="form-input" id="proj-category" type="text" placeholder="SaaS · Web App" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="proj-year">Year</label>
+          <input class="form-input" id="proj-year" type="text" placeholder="2024" />
+        </div>
+        <div class="form-group full">
+          <label class="form-label" for="proj-desc">Description</label>
+          <textarea class="form-textarea" id="proj-desc" rows="3"></textarea>
+        </div>
+        <div class="form-group full">
+          <label class="form-label" for="proj-tech">Tech stack (comma-separated)</label>
+          <input class="form-input" id="proj-tech" type="text" placeholder="React, Node.js, PostgreSQL" />
+        </div>
+        <div class="form-group full">
+          <label class="form-label" for="proj-link">Project URL</label>
+          <input class="form-input" id="proj-link" type="text" placeholder="https://..." />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="project-modal-cancel">Cancel</button>
+      <button class="btn btn-primary" id="save-project-btn">Save project</button>
+    </div>
+  </div>
+</div>
+
+<!-- Skill Modal -->
+<div class="modal-overlay" id="skill-modal" role="dialog" aria-modal="true" aria-labelledby="skill-modal-title">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="skill-modal-title">Add skill</h2>
+      <button class="modal-close" id="skill-modal-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="skill-id" />
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="skill-title">Title</label>
+          <input class="form-input" id="skill-title" type="text" placeholder="Frontend Dev" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="skill-icon">Icon</label>
+          <select class="form-select" id="skill-icon">
+            <option value="grid">Grid (Design)</option>
+            <option value="code">Code (Dev)</option>
+            <option value="database">Database (Backend)</option>
+            <option value="layers">Layers (Motion)</option>
+            <option value="star">Star</option>
+            <option value="zap">Zap</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="skill-desc">Description</label>
+          <textarea class="form-textarea" id="skill-desc" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="skill-items">Skill items (one per line)</label>
+          <textarea class="form-textarea" id="skill-items" rows="5" placeholder="React / Next.js&#10;TypeScript&#10;Tailwind CSS"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="skill-modal-cancel">Cancel</button>
+      <button class="btn btn-primary" id="save-skill-btn">Save skill</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+const API = '';
+let token = localStorage.getItem('admin_token');
+let db = {};
+let editingTags = [];
+
+// ── API helpers ───────────────────────────────────────
+async function api(method, path, body, isFormData) {
+  const opts = {
+    method,
+    headers: { 'Authorization': 'Bearer ' + token }
+  };
+  if (body && !isFormData) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  } else if (body && isFormData) {
+    opts.body = body;
+  }
+  const res = await fetch(API + path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+// ── Toast ──────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = 'toast toast-' + type;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── Login ──────────────────────────────────────────
+async function tryLogin() {
+  const u = document.getElementById('l-user').value.trim();
+  const p = document.getElementById('l-pass').value;
+  const btn = document.getElementById('login-btn');
+  btn.textContent = 'Signing in...';
+  btn.disabled = true;
+  try {
+    const data = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: u, password: p })
+    }).then(r => r.json());
+    if (!data.token) throw new Error('Invalid credentials');
+    token = data.token;
+    localStorage.setItem('admin_token', token);
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = '';
+    document.getElementById('s-user').textContent = data.username;
+    await loadAll();
+  } catch (e) {
+    document.getElementById('login-error').style.display = 'block';
+  } finally {
+    btn.textContent = 'Sign in';
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('login-btn').addEventListener('click', tryLogin);
+document.getElementById('l-pass').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+document.getElementById('l-user').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  localStorage.removeItem('admin_token');
+  location.reload();
+});
+
+// ── Navigation ─────────────────────────────────────
+document.querySelectorAll('.nav-item[data-panel]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
+    document.getElementById('page-title').textContent = btn.textContent.trim();
+    document.getElementById('sidebar').classList.remove('open');
+  });
+});
+
+document.getElementById('menu-toggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+// ── Load all data ─────────────────────────────────
+async function loadAll() {
+  db = await api('GET', '/api/portfolio');
+  fillProfile();
+  renderProjects();
+  renderSkills();
+  fillTestimonial();
+}
+
+// ── Profile ────────────────────────────────────────
+function fillProfile() {
+  const p = db.profile;
+  document.getElementById('p-name').value = p.name || '';
+  document.getElementById('p-title').value = p.title || '';
+  document.getElementById('p-eyebrow').value = p.eyebrow || '';
+  document.getElementById('p-location').value = p.location || '';
+  document.getElementById('p-hero1').value = p.heroLine1 || '';
+  document.getElementById('p-hero2').value = p.heroLine2 || '';
+  document.getElementById('p-hero3').value = p.heroLine3 || '';
+  document.getElementById('p-herobrief').value = p.heroBrief || '';
+  document.getElementById('p-bio').value = p.bio || '';
+  document.getElementById('p-bio2').value = p.bio2 || '';
+  document.getElementById('p-stat-projects').value = p.statProjects || 0;
+  document.getElementById('p-stat-years').value = p.statYears || 0;
+  document.getElementById('p-stat-sat').value = p.statSatisfaction || 0;
+  document.getElementById('p-avail').value = String(p.available !== false);
+  document.getElementById('p-email').value = p.email || '';
+  document.getElementById('p-github').value = p.github || '';
+  document.getElementById('p-linkedin').value = p.linkedin || '';
+
+  if (p.photo) {
+    document.getElementById('photo-preview').innerHTML = `<img src="${p.photo}" alt="Profile photo" />`;
+  }
+
+  editingTags = [...(db.tags || [])];
+  renderTags();
+}
+
+function renderTags() {
+  const list = document.getElementById('tag-list');
+  list.innerHTML = '';
+  editingTags.forEach((tag, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'tag-chip';
+    chip.innerHTML = `${tag}<button class="tag-chip-del" data-i="${i}" aria-label="Remove tag">&times;</button>`;
+    list.appendChild(chip);
+  });
+  list.querySelectorAll('.tag-chip-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      editingTags.splice(parseInt(btn.dataset.i), 1);
+      renderTags();
+    });
+  });
+}
+
+document.getElementById('tag-add-btn').addEventListener('click', () => {
+  const inp = document.getElementById('tag-input');
+  const val = inp.value.trim();
+  if (val && !editingTags.includes(val)) {
+    editingTags.push(val);
+    renderTags();
+    inp.value = '';
+  }
+});
+document.getElementById('tag-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('tag-add-btn').click();
+});
+
+document.getElementById('save-profile-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('save-profile-btn');
+  btn.disabled = true;
+  try {
+    const payload = {
+      name: document.getElementById('p-name').value,
+      title: document.getElementById('p-title').value,
+      eyebrow: document.getElementById('p-eyebrow').value,
+      location: document.getElementById('p-location').value,
+      heroLine1: document.getElementById('p-hero1').value,
+      heroLine2: document.getElementById('p-hero2').value,
+      heroLine3: document.getElementById('p-hero3').value,
+      heroBrief: document.getElementById('p-herobrief').value,
+      bio: document.getElementById('p-bio').value,
+      bio2: document.getElementById('p-bio2').value,
+      statProjects: parseInt(document.getElementById('p-stat-projects').value),
+      statYears: parseInt(document.getElementById('p-stat-years').value),
+      statSatisfaction: parseInt(document.getElementById('p-stat-sat').value),
+      available: document.getElementById('p-avail').value === 'true',
+      email: document.getElementById('p-email').value,
+      github: document.getElementById('p-github').value,
+      linkedin: document.getElementById('p-linkedin').value
+    };
+    await api('PUT', '/api/admin/profile', payload);
+    await api('PUT', '/api/admin/tags', { tags: editingTags });
+    toast('Profile saved');
+    db = await api('GET', '/api/portfolio');
+  } catch (e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// Photo upload
+document.getElementById('photo-upload-btn').addEventListener('click', () => {
+  document.getElementById('photo-file').click();
+});
+document.getElementById('photo-file').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('photo', file);
+  try {
+    const res = await api('POST', '/api/admin/upload-photo', fd, true);
+    document.getElementById('photo-preview').innerHTML = `<img src="${res.url}?t=${Date.now()}" alt="Profile photo" />`;
+    toast('Photo uploaded');
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+  e.target.value = '';
+});
+
+// ── Projects ───────────────────────────────────────
+function renderProjects() {
+  const list = document.getElementById('projects-list');
+  list.innerHTML = '';
+  (db.projects || []).forEach(proj => {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `
+      <div class="item-row-drag" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+      </div>
+      <div class="item-row-thumb">
+        ${proj.image ? `<img src="${proj.image}" alt="${proj.title}" />` : `<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="1.5"/><polyline points="21 15 16 10 5 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`}
+      </div>
+      <div class="item-row-body">
+        <div class="item-row-title">${proj.title}</div>
+        <div class="item-row-meta">${proj.category} &middot; ${proj.year}</div>
+      </div>
+      <div class="item-row-actions">
+        <button class="btn btn-ghost btn-sm btn-icon edit-proj" data-id="${proj.id}" aria-label="Edit">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="btn btn-danger btn-sm btn-icon del-proj" data-id="${proj.id}" aria-label="Delete">
+          <svg viewBox="0 0 24 24" fill="none"><polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>`;
+    list.appendChild(row);
+  });
+
+  list.querySelectorAll('.edit-proj').forEach(btn => {
+    btn.addEventListener('click', () => openProjectModal(btn.dataset.id));
+  });
+  list.querySelectorAll('.del-proj').forEach(btn => {
+    btn.addEventListener('click', () => deleteProject(btn.dataset.id));
+  });
+}
+
+function openProjectModal(id) {
+  const modal = document.getElementById('project-modal');
+  const proj = id ? db.projects.find(p => p.id === id) : null;
+  document.getElementById('project-modal-title').textContent = proj ? 'Edit project' : 'Add project';
+  document.getElementById('proj-id').value = proj ? proj.id : '';
+  document.getElementById('proj-title').value = proj ? proj.title : '';
+  document.getElementById('proj-category').value = proj ? proj.category : '';
+  document.getElementById('proj-year').value = proj ? proj.year : new Date().getFullYear();
+  document.getElementById('proj-desc').value = proj ? proj.description : '';
+  document.getElementById('proj-tech').value = proj ? proj.tech.join(', ') : '';
+  document.getElementById('proj-link').value = proj ? proj.link : '';
+  document.getElementById('proj-image-url').value = proj ? (proj.image || '') : '';
+
+  const preview = document.getElementById('proj-img-preview');
+  if (proj && proj.image) {
+    preview.innerHTML = `<img src="${proj.image}" alt="${proj.title}" />`;
+  } else {
+    preview.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="1.5"/><polyline points="21 15 16 10 5 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+
+  modal.classList.add('open');
+}
+
+async function deleteProject(id) {
+  if (!confirm('Delete this project?')) return;
+  try {
+    await api('DELETE', '/api/admin/projects/' + id);
+    toast('Project deleted');
+    db = await api('GET', '/api/portfolio');
+    renderProjects();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+document.getElementById('add-project-btn').addEventListener('click', () => openProjectModal(null));
+document.getElementById('project-modal-close').addEventListener('click', () => document.getElementById('project-modal').classList.remove('open'));
+document.getElementById('project-modal-cancel').addEventListener('click', () => document.getElementById('project-modal').classList.remove('open'));
+document.getElementById('project-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('project-modal')) document.getElementById('project-modal').classList.remove('open');
+});
+
+// Project image upload
+document.getElementById('proj-img-upload-btn').addEventListener('click', () => document.getElementById('proj-img-file').click());
+document.getElementById('proj-img-file').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('image', file);
+  try {
+    const res = await api('POST', '/api/admin/upload-project-image', fd, true);
+    document.getElementById('proj-image-url').value = res.url;
+    document.getElementById('proj-img-preview').innerHTML = `<img src="${res.url}?t=${Date.now()}" alt="Project image" />`;
+    toast('Image uploaded');
+  } catch (err) { toast(err.message, 'error'); }
+  e.target.value = '';
+});
+
+document.getElementById('save-project-btn').addEventListener('click', async () => {
+  const id = document.getElementById('proj-id').value;
+  const payload = {
+    title: document.getElementById('proj-title').value,
+    category: document.getElementById('proj-category').value,
+    year: document.getElementById('proj-year').value,
+    description: document.getElementById('proj-desc').value,
+    tech: document.getElementById('proj-tech').value,
+    link: document.getElementById('proj-link').value,
+    image: document.getElementById('proj-image-url').value || null
+  };
+  const btn = document.getElementById('save-project-btn');
+  btn.disabled = true;
+  try {
+    if (id) {
+      await api('PUT', '/api/admin/projects/' + id, payload);
+      toast('Project updated');
+    } else {
+      await api('POST', '/api/admin/projects', payload);
+      toast('Project added');
+    }
+    document.getElementById('project-modal').classList.remove('open');
+    db = await api('GET', '/api/portfolio');
+    renderProjects();
+  } catch (e) { toast(e.message, 'error'); }
+  finally { btn.disabled = false; }
+});
+
+// ── Skills ─────────────────────────────────────────
+function renderSkills() {
+  const list = document.getElementById('skills-list');
+  list.innerHTML = '';
+  (db.skills || []).forEach(skill => {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `
+      <div class="item-row-drag" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+      </div>
+      <div class="item-row-body">
+        <div class="item-row-title">${skill.title}</div>
+        <div class="item-row-meta">${skill.items.slice(0,3).join(' &middot; ')}</div>
+      </div>
+      <div class="item-row-actions">
+        <button class="btn btn-ghost btn-sm btn-icon edit-skill" data-id="${skill.id}" aria-label="Edit">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="btn btn-danger btn-sm btn-icon del-skill" data-id="${skill.id}" aria-label="Delete">
+          <svg viewBox="0 0 24 24" fill="none"><polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>`;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('.edit-skill').forEach(btn => {
+    btn.addEventListener('click', () => openSkillModal(btn.dataset.id));
+  });
+  list.querySelectorAll('.del-skill').forEach(btn => {
+    btn.addEventListener('click', () => deleteSkill(btn.dataset.id));
+  });
+}
+
+function openSkillModal(id) {
+  const skill = id ? db.skills.find(s => s.id === id) : null;
+  document.getElementById('skill-modal-title').textContent = skill ? 'Edit skill' : 'Add skill';
+  document.getElementById('skill-id').value = skill ? skill.id : '';
+  document.getElementById('skill-title').value = skill ? skill.title : '';
+  document.getElementById('skill-icon').value = skill ? skill.icon : 'grid';
+  document.getElementById('skill-desc').value = skill ? skill.description : '';
+  document.getElementById('skill-items').value = skill ? skill.items.join('\n') : '';
+  document.getElementById('skill-modal').classList.add('open');
+}
+
+async function deleteSkill(id) {
+  if (!confirm('Delete this skill?')) return;
+  try {
+    await api('DELETE', '/api/admin/skills/' + id);
+    toast('Skill deleted');
+    db = await api('GET', '/api/portfolio');
+    renderSkills();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+document.getElementById('add-skill-btn').addEventListener('click', () => openSkillModal(null));
+document.getElementById('skill-modal-close').addEventListener('click', () => document.getElementById('skill-modal').classList.remove('open'));
+document.getElementById('skill-modal-cancel').addEventListener('click', () => document.getElementById('skill-modal').classList.remove('open'));
+document.getElementById('skill-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('skill-modal')) document.getElementById('skill-modal').classList.remove('open');
+});
+
+document.getElementById('save-skill-btn').addEventListener('click', async () => {
+  const id = document.getElementById('skill-id').value;
+  const payload = {
+    title: document.getElementById('skill-title').value,
+    icon: document.getElementById('skill-icon').value,
+    description: document.getElementById('skill-desc').value,
+    items: document.getElementById('skill-items').value
+  };
+  const btn = document.getElementById('save-skill-btn');
+  btn.disabled = true;
+  try {
+    if (id) {
+      await api('PUT', '/api/admin/skills/' + id, payload);
+      toast('Skill updated');
+    } else {
+      await api('POST', '/api/admin/skills', payload);
+      toast('Skill added');
+    }
+    document.getElementById('skill-modal').classList.remove('open');
+    db = await api('GET', '/api/portfolio');
+    renderSkills();
+  } catch (e) { toast(e.message, 'error'); }
+  finally { btn.disabled = false; }
+});
+
+// ── Testimonial ────────────────────────────────────
+function fillTestimonial() {
+  const t = db.testimonial || {};
+  document.getElementById('t-quote').value = t.quote || '';
+  document.getElementById('t-author').value = t.author || '';
+  document.getElementById('t-role').value = t.role || '';
+}
+
+document.getElementById('save-testimonial-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('save-testimonial-btn');
+  btn.disabled = true;
+  try {
+    await api('PUT', '/api/admin/testimonial', {
+      quote: document.getElementById('t-quote').value,
+      author: document.getElementById('t-author').value,
+      role: document.getElementById('t-role').value
+    });
+    toast('Testimonial saved');
+  } catch (e) { toast(e.message, 'error'); }
+  finally { btn.disabled = false; }
+});
+
+// ── Keyboard nav ───────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('project-modal').classList.remove('open');
+    document.getElementById('skill-modal').classList.remove('open');
+    document.getElementById('sidebar').classList.remove('open');
+  }
+});
+
+// ── Init ───────────────────────────────────────────
+if (token) {
+  // Verify token is still valid
+  fetch('/api/portfolio', { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(r => {
+      if (r.ok) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app').style.display = '';
+        return r.json();
+      }
+      throw new Error();
+    })
+    .then(data => {
+      db = data;
+      fillProfile();
+      renderProjects();
+      renderSkills();
+      fillTestimonial();
+    })
+    .catch(() => {
+      localStorage.removeItem('admin_token');
+      token = null;
+    });
+}
+</script>
+</body>
+</html>
